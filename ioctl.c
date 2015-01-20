@@ -245,6 +245,7 @@ crypto_create_session(struct fcrypt *fcr, struct session_op *sop)
 
 		ret = cryptodev_get_cipher_key(keys.ckey, sop, aead);
 		if (unlikely(ret < 0))
+			ddebug(1, "Failed to get cipher key for %s", alg_name);
 			goto error_cipher;
 
 		ret = cryptodev_cipher_init(&ses_new->cdata, alg_name, keys.ckey,
@@ -266,6 +267,7 @@ crypto_create_session(struct fcrypt *fcr, struct session_op *sop)
 
 		if (sop->mackey && unlikely(copy_from_user(keys.mkey, sop->mackey,
 					    sop->mackeylen))) {
+			ddebug(1, "Failed to copy mackey");
 			ret = -EFAULT;
 			goto error_hash;
 		}
@@ -307,6 +309,8 @@ restart:
 			get_random_bytes(&ses_new->sid, sizeof(ses_new->sid));
 			/* Unless we have a broken RNG this
 			   shouldn't loop forever... ;-) */
+			ddebug(1, "Duplicate sid (0x%08X) detected - restarting",
+				ses_new->sid);
 			goto restart;
 		}
 	}
@@ -316,6 +320,9 @@ restart:
 
 	/* Fill in some values for the user. */
 	sop->ses = ses_new->sid;
+
+	/* really bad debug message */
+	ddebug(2, "Returning 0");
 
 	return 0;
 
